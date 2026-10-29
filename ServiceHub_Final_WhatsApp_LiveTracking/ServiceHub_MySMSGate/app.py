@@ -11,7 +11,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE, ".env"))
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "change-this-secret-key"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(BASE, "servicehub.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 db = SQLAlchemy(app)
