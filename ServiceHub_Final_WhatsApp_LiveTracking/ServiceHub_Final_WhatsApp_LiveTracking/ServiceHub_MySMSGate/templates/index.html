@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% block content %}
+<section class="hero">
+<div class="hero-copy">
+<div class="eyebrow">ONE PLACE. EVERY HOME SERVICE.</div>
+<h1>Trusted professionals,<br><em>right around you.</em></h1>
+<p>Find verified plumbers, electricians and carpenters nearby. Compare their work, ratings and charges before you book.</p>
+<div class="hero-buttons">
+<a href="{{url_for('register',role='customer')}}" class="btn accent">Book a Service →</a>
+<a href="{{url_for('register',role='provider')}}" class="btn outline">Join as a Professional</a>
+</div>
+<div class="trust"><span>✓ Verified profiles</span><span>✓ Location based</span><span>✓ Live updates</span></div>
+</div>
+<div class="hero-art">
+<div class="orb orb1"></div><div class="orb orb2"></div>
+<div class="service-card card1">🔧 <b>Plumber</b><small>Available nearby</small></div>
+<div class="service-card card2">⚡ <b>Electrician</b><small>4.9 ★ rating</small></div>
+<div class="service-card card3">🪚 <b>Carpenter</b><small>Verified professional</small></div>
+<div class="center-mark">SH</div>
+</div>
+</section>
+<section class="feature-strip">
+<div><strong>01</strong><b>Choose</b><span>Pick the service you need</span></div>
+<div><strong>02</strong><b>Compare</b><span>See work & feedback</span></div>
+<div><strong>03</strong><b>Book</b><span>Get live booking updates</span></div>
+<div><strong>04</strong><b>Track</b><span>Follow the professional</span></div>
+</section>
+{% endblock %}

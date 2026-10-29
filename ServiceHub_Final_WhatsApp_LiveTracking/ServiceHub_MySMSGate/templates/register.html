@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block content %}
+<div class="auth-wrap"><div class="auth-box">
+<div class="eyebrow">{{"PROFESSIONAL" if role=="provider" else "CUSTOMER"}} REGISTRATION</div>
+<h2>Create your account</h2><p class="muted">Your information is securely stored on the server.</p>
+<form method="post" enctype="multipart/form-data" class="form-grid">
+<label>Full name<input name="name" required></label>
+<label>Email ID<input type="email" name="email" required></label>
+<label>Phone number<input type="tel" name="phone" required placeholder="+91 9876543210"></label>
+<label>Password<input type="password" name="password" minlength="6" required></label>
+<label>Address<textarea name="address" required></textarea></label>
+<label>{{"Service you provide" if role=="provider" else "Service you need"}}
+<select name="{{'service_type' if role=='provider' else 'work_needed'}}" required>
+<option value="">Select</option><option>Plumber</option><option>Carpenter</option><option>Electrician</option>
+</select></label>
+<label>ID type<select name="id_type" required><option value="">Select ID</option><option>Aadhaar Card</option><option>Driving Licence</option><option>Voter ID</option><option>Passport</option></select></label>
+<label>ID proof image<input type="file" name="id_proof" accept="image/*" required></label>
+{% if role=="provider" %}<label>Profile photo<input type="file" name="profile_photo" accept="image/*" required></label>{% endif %}
+<div class="full"><button class="btn accent wide">Create Account →</button></div>
+</form>
+<p class="switch">Already registered? <a href="{{url_for('login',role=role)}}">Login</a></p>
+</div></div>
+{% endblock %}

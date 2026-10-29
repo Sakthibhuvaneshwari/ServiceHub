@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block content %}
+<section class="dashboard-head"><div><div class="eyebrow">CUSTOMER DASHBOARD</div><h2>Find your local professional</h2><p class="muted">Compare real work, feedback and charges before booking.</p></div></section>
+<div class="service-tabs">
+<button class="service-tab active" data-service="Plumber">🔧 Plumber</button>
+<button class="service-tab" data-service="Electrician">⚡ Electrician</button>
+<button class="service-tab" data-service="Carpenter">🪚 Carpenter</button>
+</div>
+<div id="location-note" class="location-note">📍 Getting your location to show nearby professionals first...</div>
+<div id="provider-list" class="provider-grid"><div class="loading">Loading professionals...</div></div>
+<section class="panel"><div class="panel-head"><h3>My bookings</h3></div>
+<div class="booking-list">
+{% for b in bookings %}
+<div class="booking-row" id="booking-{{b.id}}">
+<div><b>#{{b.id}} · {{b.provider.name}}</b><span>{{b.provider.service_type}} · ₹{{"%.0f"|format(b.provider.charge)}} · {{b.created_at.strftime("%d %b %Y, %I:%M %p")}}</span></div>
+<div class="booking-actions"><span class="status {{b.status}}">{{b.status.replace("_"," ")}}</span>
+{% if b.status=="completed" %}<button class="btn small accent" onclick="reviewBooking({{b.id}})">Rate service</button>{% endif %}
+{% if b.status in ["accepted","on_the_way","started"] %}<button class="btn small dark" onclick="openTrack({{b.id}},{{b.provider_lat or 0}},{{b.provider_lng or 0}})">Track</button>{% endif %}<a class="btn small whatsapp" target="_blank" href="https://wa.me/{{b.provider.phone|replace("+","")}}?text=Hi%20{{b.provider.name|urlencode}}%2C%20I%20am%20your%20ServiceHub%20customer%20for%20booking%20%23{{b.id}}.">WhatsApp</a>
+</div></div>
+{% else %}<p class="empty">No bookings yet.</p>{% endfor %}
+</div></section>
+<div id="reviewModal" class="modal hidden"><div class="modal-box review-modal-box"><button class="close" onclick="closeReview()">×</button><div class="eyebrow">SERVICE COMPLETED</div><h3>Rate &amp; Give Feedback</h3><p class="muted">Tell us about your completed work experience.</p><form onsubmit="submitReview(event)" class="review-form"><input type="hidden" id="reviewBookingId"><label>Customer name</label><input value="{{user.name}}" readonly><label>Rating</label><div id="starRating" class="star-rating" aria-label="Choose rating">{% for i in range(1,6) %}<button type="button" onclick="setReviewStars({{i}})" aria-label="{{i}} stars">★</button>{% endfor %}</div><input type="hidden" id="reviewRating" value="5"><label>What work was completed?</label><textarea id="reviewWork" maxlength="500" required placeholder="Example: Bathroom tap repair and pipe replacement"></textarea><label>Your feedback</label><textarea id="reviewFeedback" maxlength="1000" required placeholder="How was the service? Share your experience..."></textarea><div id="reviewError" class="form-error"></div><div class="modal-actions"><button type="button" class="btn outline" onclick="closeReview()">Cancel</button><button type="submit" class="btn accent">Submit Feedback</button></div></form></div></div><div id="providerReviewsModal" class="modal hidden"><div class="modal-box"><button class="close" onclick="closeProviderReviews()">×</button><h3>All customer feedback</h3><div id="providerReviewsBody" class="reviews"></div></div></div><div id="portfolioModal" class="modal hidden"><div class="modal-box"><button class="close" onclick="closePortfolio()">×</button><h3>Professional work portfolio</h3><div id="portfolioBody" class="portfolio-body"></div></div></div>
+<div id="trackModal" class="modal hidden"><div class="modal-box"><button class="close" onclick="closeTrack()">×</button><h3>Live location</h3><div id="map"></div></div></div>
+<section class="panel chatbot-panel">
+<div class="panel-head"><h3>🤖 ServiceHub Assistant</h3><span class="muted">Quick help anytime</span></div>
+<div id="botMessages" class="bot-messages"><div class="bot-msg bot"><b>Assistant</b><span>Hi! 👋 Ask me about booking, acceptance/rejection, status, tracking or reviews.</span></div></div>
+<div class="bot-quick"><button type="button" onclick="askBot('How do I book a professional?')">Booking</button><button type="button" onclick="askBot('What happens when the professional accepts?')">Acceptance</button><button type="button" onclick="askBot('How can I track the professional?')">Tracking</button><button type="button" onclick="askBot('How do I give a review?')">Review</button></div>
+<form class="bot-form" onsubmit="sendBot(event)"><input id="botInput" maxlength="500" placeholder="Ask ServiceHub Assistant..." autocomplete="off"><button class="btn accent">Send</button></form>
+</section>
+{% endblock %}
+{% block scripts %}<script>window.USER_ID={{user.id}}; window.USER_ROLE="customer";</script>{% endblock %}
+<div id="servicehub-live-map" style="margin:18px 0;padding:16px;border:1px solid #ddd;border-radius:14px;background:#fff">
+<h3>🗺️ Live Provider Tracking</h3><input id="trackBookingId" type="number" placeholder="Booking ID" style="padding:9px">
+<button type="button" onclick="trackServiceHubProvider()">📍 Track Provider</button>
+<div id="servicehubMap" style="height:320px;margin-top:12px;border-radius:12px"></div></div>
+<script>
+let shMap,shMarker,shSocket;
+function trackServiceHubProvider(){
+ const id=document.getElementById("trackBookingId").value;if(!id)return alert("Enter booking ID");
+ if(typeof L==="undefined")return alert("Map library unavailable");
+ if(!shMap){shMap=L.map("servicehubMap").setView([9.9252,78.1198],13);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(shMap);}
+ if(shSocket)shSocket.disconnect(); shSocket=io();
+ shSocket.on("location_update",d=>{if(String(d.booking_id)!==String(id)||d.role!=="provider")return;
+  const p=[d.lat,d.lng];if(!shMarker)shMarker=L.marker(p).addTo(shMap).bindPopup("Provider live location");else shMarker.setLatLng(p);shMap.setView(p,15);
+ });
+}
+</script>

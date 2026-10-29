@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% block content %}
+<section class="dashboard-head"><div><div class="eyebrow">PROFESSIONAL DASHBOARD</div><h2>Build a profile customers trust</h2><p class="muted">Complete your skills, pricing, work portfolio and location.</p></div>
+<div class="profile-status {% if user.profile_complete %}complete{% endif %}">{{"✓ Profile complete" if user.profile_complete else "Profile incomplete"}}</div></section>
+<div class="dash-grid">
+<section class="panel"><div class="panel-head"><h3>Professional profile</h3></div>
+<form id="profileForm" class="form-grid" enctype="multipart/form-data">
+<label>Service<select disabled><option>{{user.service_type}}</option></select></label>
+<label>Phone number<input value="{{user.phone}}" disabled></label>
+<label>Specific work you know<input name="specific_work" value="{{user.specific_work or ''}}" placeholder="e.g. Pipe leakage, modular furniture"></label>
+<label>Service charge (₹)<input type="number" name="charge" min="0" value="{{user.charge or ''}}" required></label>
+<label>Profile photo<input type="file" name="profile_photo" accept="image/*"></label>
+<input type="hidden" name="latitude" id="plat"><input type="hidden" name="longitude" id="plng">
+<div class="full"><button type="button" class="btn outline" onclick="shareProviderLocation()">📍 Share my location</button> <span id="locMsg" class="muted"></span></div>
+<div class="full"><button class="btn accent wide">Save profile</button></div>
+</form></section>
+<section class="panel"><div class="panel-head"><h3>Before & After portfolio</h3></div>
+<form id="workForm" class="form-grid" enctype="multipart/form-data">
+<label class="full">Work title<input name="title" placeholder="Kitchen cabinet repair"></label>
+<label>Before image<input type="file" name="before" accept="image/*" required></label>
+<label>After image<input type="file" name="after" accept="image/*" required></label>
+<div class="full"><button class="btn dark wide">Add completed work</button></div>
+</form>
+<div class="portfolio">{% for w in user.work_images %}<div class="work-card"><div><img src="/{{w.before_image}}"><span>Before</span></div><div><img src="/{{w.after_image}}"><span>After</span></div><b>{{w.title}}</b></div>{% else %}<p class="empty">Add your first project to build trust.</p>{% endfor %}</div>
+</section></div>
+<section class="panel"><div class="panel-head"><h3>Booking requests</h3><span class="rating">★ {{avg}} / 5</span></div>
+<div class="booking-list">{% for b in bookings %}<div class="booking-row"><div><b>#{{b.id}} · {{b.customer.name}}</b><span>{{b.customer_address}} · 📞 {{b.customer.phone}}</span></div>
+<div class="booking-actions"><span class="status {{b.status}}">{{b.status.replace("_"," ")}}</span>
+{% if b.status=="requested" %}<button class="btn small accent" onclick="setBookingStatus({{b.id}},'accepted')">Accept</button><button class="btn small outline" onclick="setBookingStatus({{b.id}},'rejected')">Reject</button>{% endif %}<a class="btn small whatsapp" target="_blank" href="https://wa.me/{{b.customer.phone|replace("+","")}}?text=Hi%20{{b.customer.name|urlencode}}%2C%20I%20am%20your%20ServiceHub%20professional%20for%20booking%20%23{{b.id}}.">WhatsApp</a>
+{% if b.status=="accepted" %}<button class="btn small dark" onclick="setBookingStatus({{b.id}},'on_the_way')">On the way</button>{% endif %}
+{% if b.status=="on_the_way" %}<button class="btn small dark" onclick="setBookingStatus({{b.id}},'started')">Start work</button>{% endif %}
+{% if b.status=="started" %}<button class="btn small accent" onclick="setBookingStatus({{b.id}},'completed')">Complete</button>{% endif %}
+</div></div>{% else %}<p class="empty">No booking requests yet.</p>{% endfor %}</div></section>
+
+<section class="panel"><div class="panel-head"><h3>Customer feedback</h3><span class="rating">Average ★ {{avg}}</span></div>
+<div class="reviews">{% for r in reviews %}<div class="review"><div class="stars">{{"★"*r.rating}}{{"☆"*(5-r.rating)}}</div><b>{{r.customer.name}}</b><div class="stars">{{"★"*r.rating}}{{"☆"*(5-r.rating)}}</div><small>Work: {{r.work_description or "Service work"}} · {{r.created_at.strftime("%d %b %Y")}}</small><p>{{r.feedback}}</p></div>{% else %}<p class="empty">Reviews will appear here after completed jobs.</p>{% endfor %}</div></section>
+<section class="panel chatbot-panel">
+<div class="panel-head"><h3>🤖 ServiceHub Assistant</h3><span class="muted">Quick help anytime</span></div>
+<div id="botMessages" class="bot-messages"><div class="bot-msg bot"><b>Assistant</b><span>Hi! 👋 Ask me about booking, acceptance/rejection, status, tracking or reviews.</span></div></div>
+<div class="bot-quick"><button type="button" onclick="askBot('How do I book a professional?')">Booking</button><button type="button" onclick="askBot('What happens when the professional accepts?')">Acceptance</button><button type="button" onclick="askBot('How can I track the professional?')">Tracking</button><button type="button" onclick="askBot('How do I give a review?')">Review</button></div>
+<form class="bot-form" onsubmit="sendBot(event)"><input id="botInput" maxlength="500" placeholder="Ask ServiceHub Assistant..." autocomplete="off"><button class="btn accent">Send</button></form>
+</section>
+
+{% endblock %}
+{% block scripts %}<script>window.USER_ID={{user.id}};window.USER_ROLE="provider";</script>{% endblock %}
+<div id="servicehub-live-control" style="margin:18px 0;padding:16px;border:1px solid #ddd;border-radius:14px;background:#fff">
+<h3>📍 Live Location Tracking</h3><p id="liveTrackingStatus">⚪ Live location sharing is OFF</p>
+<input id="liveBookingId" type="number" placeholder="Active booking ID" style="padding:9px">
+<button type="button" onclick="startServiceHubLiveTracking(document.getElementById('liveBookingId').value)">🟢 Start Live Location</button>
+<button type="button" onclick="stopServiceHubLiveTracking()">⛔ Stop</button></div>
