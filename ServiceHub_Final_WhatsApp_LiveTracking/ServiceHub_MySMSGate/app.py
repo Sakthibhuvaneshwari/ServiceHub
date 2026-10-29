@@ -298,30 +298,64 @@ def booking_status(bid):
     return jsonify({"ok":True,"status":status,"message":message,"whatsapp_url":whatsapp_url})
 
 @app.route("/api/booking/<int:bid>/location", methods=["POST"])
-@login_required
 def update_booking_location(bid):
-    b = Booking.query.get_or_404(bid)
-    if current_user.id not in (b.customer_id, b.provider_id):
-        return jsonify({"error":"Unauthorized"}), 403
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Login required"}), 401
+
+    b = db.session.get(Booking, bid)
+
+    if not b:
+        return jsonify({"error": "Booking not found"}), 404
+
+    if user.id not in (b.customer_id, b.provider_id):
+        return jsonify({"error": "Unauthorized"}), 403
+
     data = request.get_json(silent=True) or {}
+
     try:
-        lat, lng = float(data.get("lat")), float(data.get("lng"))
+        lat = float(data.get("lat"))
+        lng = float(data.get("lng"))
     except (TypeError, ValueError):
-        return jsonify({"error":"Valid coordinates are required"}), 400
+        return jsonify({
+            "error": "Valid coordinates are required"
+        }), 400
+
     if not (-90 <= lat <= 90 and -180 <= lng <= 180):
-        return jsonify({"error":"Invalid coordinates"}), 400
-    if current_user.id == b.provider_id:
-        b.provider_lat, b.provider_lng = lat, lng
-        target, role = b.customer_id, "provider"
+        return jsonify({"error": "Invalid coordinates"}), 400
+
+    if user.id == b.provider_id:
+        b.provider_lat = lat
+        b.provider_lng = lng
+        target = b.customer_id
+        role = "provider"
     else:
-        b.customer_lat, b.customer_lng = lat, lng
-        target, role = b.provider_id, "customer"
+        b.customer_lat = lat
+        b.customer_lng = lng
+        target = b.provider_id
+        role = "customer"
+
     db.session.commit()
+
     socketio.emit("location_update", {
-        "booking_id": b.id, "role": role, "lat": lat, "lng": lng,
-        "updated_at": datetime.utcnow().strftime("%d %b %Y %I:%M:%S %p")
+        "booking_id": b.id,
+        "role": role,
+        "lat": lat,
+        "lng": lng,
+        "updated_at": datetime.utcnow().strftime(
+            "%d %b %Y %I:%M:%S %p"
+        )
     }, room=f"user_{target}")
-    return jsonify({"success":True,"lat":lat,"lng":lng,"role":role})
+
+    return jsonify({
+        "success": True,
+        "lat": lat,
+        "lng": lng,
+        "role": role
+    })
+
+
 
 @app.route("/api/review", methods=["POST"])
 def add_review():
