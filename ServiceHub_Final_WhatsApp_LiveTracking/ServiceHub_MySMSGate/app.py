@@ -85,17 +85,49 @@ class Review(db.Model):
     customer = db.relationship("User", foreign_keys=[customer_id])
     provider = db.relationship("User", foreign_keys=[provider_id])
 
+
 def save_upload(file, folder):
     if not file or not file.filename:
         return None
-    ext = file.filename.rsplit(".",1)[-1].lower()
+
+    ext = file.filename.rsplit(".", 1)[-1].lower()
+
     if ext not in ALLOWED_IMAGES:
         return None
-    filename = secure_filename(str(uuid.uuid4()) + "." + ext)
-    path = os.path.join(UPLOAD_ROOT, folder, filename)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    file.save(path)
-    return f"uploads/{folder}/{filename}"
+
+    try:
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_KEY")
+
+        if not supabase_url or not supabase_key:
+            app.logger.error("Supabase environment variables are missing")
+            return None
+
+        supabase = create_client(supabase_url, supabase_key)
+
+        filename = f"{folder}/{uuid.uuid4()}.{ext}"
+        content_type = file.mimetype or "application/octet-stream"
+        file_bytes = file.read()
+
+        supabase.storage.from_("servicehub-images").upload(
+            filename,
+            file_bytes,
+            file_options={
+                "content-type": content_type,
+                "upsert": "false"
+            }
+        )
+
+        image_url = supabase.storage.from_(
+            "servicehub-images"
+        ).get_public_url(filename)
+
+        return image_url
+
+    except Exception:
+        app.logger.exception("Supabase image upload failed")
+        return None
+
 
 
 def current_user():
