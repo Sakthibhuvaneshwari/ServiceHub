@@ -1,4 +1,3 @@
-from flask_login import login_required 
 import os, uuid
 from dotenv import load_dotenv
 from datetime import datetime
